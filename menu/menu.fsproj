@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Utils.fs" />
+    <Compile Include="Menu.fs" /><Compile Include="Juego.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 </Project>
