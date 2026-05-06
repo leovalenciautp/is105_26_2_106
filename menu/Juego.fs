@@ -1,8 +1,9 @@
 module App.Juego
 
-
 open System
 open System.Threading
+
+open App.Utils
 
 type ProgramState =
 | Running
@@ -32,14 +33,11 @@ let initialState = {
     StartTick=0
 }
 
-let displayMessage x y color (msg:string) =
-    Console.SetCursorPosition(x,y)
-    Console.ForegroundColor <- color
-    msg |> Console.Write
+
 
 let displayMessageRight y color (msg:string) =
     let x = Console.BufferWidth-msg.Length
-    displayMessage x y color msg
+    mostrarMensaje x y color msg
 
 let updateTick state =
     {state with Tick = state.Tick+1}
@@ -55,11 +53,11 @@ let displayClock state =
     state
 
 let displayMonster state =
-    displayMessage state.MonsterX state.MonsterY ConsoleColor.Red "👽"
+    mostrarMensaje state.MonsterX state.MonsterY ConsoleColor.Red "👽"
     state
 
 let displayRock state =
-    displayMessage state.RockX state.RockY ConsoleColor.Red "🪨"
+    mostrarMensaje state.RockX state.RockY ConsoleColor.Red "🪨"
     state
 
 let updateRock state =
