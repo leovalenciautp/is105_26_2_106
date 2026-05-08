@@ -4,8 +4,11 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Tipos.fs" />
     <Compile Include="Utils.fs" />
-    <Compile Include="Menu.fs" /><Compile Include="Juego.fs" />
+    <Compile Include="Menu.fs" />
+    <Compile Include="Juego.fs" />
+    <Compile Include="Enrutador.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 </Project>

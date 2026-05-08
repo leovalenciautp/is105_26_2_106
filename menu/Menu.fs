@@ -7,15 +7,13 @@ open System.Threading
 // modulo especificado
 //
 open App.Utils
+open App.Tipos
 
 type EstadoDePrograma = 
 | Ejecutando
 | Terminado
 
-type Comando =
-| NuevoJuego
-| CargarJuego
-| Salir
+
 
 type State = {
     EstadoDePrograma: EstadoDePrograma
