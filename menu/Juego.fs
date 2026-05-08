@@ -35,9 +35,7 @@ let initialState = {
 
 
 
-let displayMessageRight y color (msg:string) =
-    let x = Console.BufferWidth-msg.Length
-    mostrarMensaje x y color msg
+
 
 let updateTick state =
     {state with Tick = state.Tick+1}
@@ -49,7 +47,7 @@ let updateClock state =
         state
 
 let displayClock state =
-    displayMessageRight 0 ConsoleColor.Green $"{state.Clock}"
+    mostrarMensajeDerecha 0 ConsoleColor.Green $"{state.Clock}"
     state
 
 let displayMonster state =

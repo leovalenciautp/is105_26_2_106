@@ -2,5 +2,5 @@ module App.Tipos
 
 type Comando =
 | NuevoJuego
-| CargarJuego
+| NuevoSaludo
 | Salir

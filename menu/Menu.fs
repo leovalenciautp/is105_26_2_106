@@ -31,7 +31,7 @@ let estadoInicial = {
     Y = 15
     Items = [|
         NuevoJuego, "New Game"
-        CargarJuego, "Load Game"
+        NuevoSaludo, "Saludar"
         Salir, "Exit"
     |]
     ItemActivo = 0

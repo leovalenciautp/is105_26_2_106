@@ -5,6 +5,7 @@ open App.Tipos
 type EstadosEnrutador =
 | MostrarMenu
 | MostrarJuego
+| MostrarSaludo
 | Terminar
 
 let estadoInicial = MostrarMenu
@@ -15,10 +16,14 @@ let rec loopPrincipal estado =
         | MostrarMenu ->
             match Menu.mostrar() with 
             | NuevoJuego -> MostrarJuego
-            | CargarJuego -> Terminar
+            | NuevoSaludo -> MostrarSaludo
             | Salir -> Terminar
         | MostrarJuego ->
             Juego.mostrar() 
+            MostrarMenu
+
+        | MostrarSaludo ->
+            Saludo.mostrar()
             MostrarMenu
         
         | Terminar ->

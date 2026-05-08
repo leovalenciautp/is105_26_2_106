@@ -7,7 +7,7 @@
     <Compile Include="Tipos.fs" />
     <Compile Include="Utils.fs" />
     <Compile Include="Menu.fs" />
-    <Compile Include="Juego.fs" />
+    <Compile Include="Juego.fs" /><Compile Include="Saludo.fs" />
     <Compile Include="Enrutador.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
