@@ -55,17 +55,12 @@ let actualizarMisiles state =
 let actualizarEnemigo state =
     if state.Tick % 4 = 0 then 
         let nuevoY = state.EnemigoY + state.EnemigoDir
-        let nuevaDir = 
+        let nuevaDir,Y = 
             match nuevoY with 
-            | y when y > Console.BufferHeight-1 -> -1
-            | y when y < 0 -> 1
-            | _ -> state.EnemigoDir
+            | y when y > Console.BufferHeight-1 -> -1,Console.BufferHeight-1
+            | y when y < 0 -> 1,0
+            | _ -> state.EnemigoDir,nuevoY
 
-        let Y = 
-            match nuevoY with
-            | y when y > Console.BufferHeight-1 -> Console.BufferHeight-1
-            | y when y < 0 -> 0
-            | _ -> nuevoY
 
         {state with EnemigoY = Y; EnemigoDir=nuevaDir;RedibujarPantalla=true}
     else
