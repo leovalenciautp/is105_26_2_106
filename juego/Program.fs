@@ -40,17 +40,15 @@ let actualizarTick state =
 
 
 let actualizarMisiles state =
-    state.Misiles
-    |> Seq.map (fun misil -> {misil with X = misil.X+1})
-    |> Seq.filter (fun misil -> misil.X < Console.BufferWidth-2)
-    |> Seq.toList
-    |> fun nuevosMisiles ->
-        {state with Misiles = nuevosMisiles}
-    |> fun nuevoEstado ->
-        if state.Misiles <> [] then 
-            {nuevoEstado with RedibujarPantalla=true}
-        else
-            state
+    if state.Misiles <> [] then 
+        state.Misiles
+        |> Seq.map (fun misil -> {misil with X = misil.X+1})
+        |> Seq.filter (fun misil -> misil.X < Console.BufferWidth-2)
+        |> Seq.toList
+        |> fun nuevosMisiles ->
+            {state with Misiles = nuevosMisiles; RedibujarPantalla=true}
+    else
+        state
 
 let actualizarEnemigo state =
     if state.Tick % 4 = 0 then 
