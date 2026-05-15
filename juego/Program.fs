@@ -7,15 +7,20 @@ type ProgramState =
 | Running
 | Terminated
 
+type Misil = {
+    X: int
+    Y: int
+}
 type State = {
     ProgramState: ProgramState
     AlienX: int
     AlienY: int
     RedibujarPantalla: bool
     Tick: int
-    MisilVisible: bool
-    MisilX: int
-    MisilY: int
+    Misiles: Misil list
+    EnemigoX: int
+    EnemigoY: int
+    EnemigoDir: int
 }
 
 let estadoInicial = {
@@ -24,30 +29,49 @@ let estadoInicial = {
     AlienY = Console.BufferHeight/2
     RedibujarPantalla = true
     Tick = -1
-    MisilVisible = false
-    MisilX = 0
-    MisilY = 0
+    Misiles = []
+    EnemigoX= Console.BufferWidth-2
+    EnemigoY= 0
+    EnemigoDir=1
 }
 
 let actualizarTick state =
     {state with Tick = state.Tick+1}
 
 
-let actualizarMisil state =
-    if state.MisilVisible then 
-        let newX = state.MisilX+1
-        if newX < (Console.BufferWidth-2) then 
-            {state with MisilX = newX}
+let actualizarMisiles state =
+    state.Misiles
+    |> Seq.map (fun misil -> {misil with X = misil.X+1})
+    |> Seq.filter (fun misil -> misil.X < Console.BufferWidth-2)
+    |> Seq.toList
+    |> fun nuevosMisiles ->
+        {state with Misiles = nuevosMisiles}
+    |> fun nuevoEstado ->
+        if state.Misiles <> [] then 
+            {nuevoEstado with RedibujarPantalla=true}
         else
-            {state with MisilVisible = false}
+            state
 
+let actualizarEnemigo state =
+    if state.Tick % 4 = 0 then 
+        let nuevoY = state.EnemigoY + state.EnemigoDir
+        let nuevaDir = 
+            match nuevoY with 
+            | y when y > Console.BufferHeight-1 -> -1
+            | y when y < 0 -> 1
+            | _ -> state.EnemigoDir
+
+        let Y = 
+            match nuevoY with
+            | y when y > Console.BufferHeight-1 -> Console.BufferHeight-1
+            | y when y < 0 -> 0
+            | _ -> nuevoY
+
+        {state with EnemigoY = Y; EnemigoDir=nuevaDir;RedibujarPantalla=true}
     else
         state
-    |> fun newState ->
-        if newState <> state then 
-            {newState with RedibujarPantalla = true}
-        else 
-            state
+
+
 
 let procesearTecladoApp key state =
     match key with 
@@ -67,10 +91,12 @@ let procesarTecladoDeAlien key state =
         {state with AlienX = min (Console.BufferWidth-2) (state.AlienX+1)}
 
     | ConsoleKey.Spacebar ->
-        if not state.MisilVisible then 
-            {state with MisilVisible = true; MisilY=state.AlienY; MisilX = state.AlienX+2 }
-        else
-            state
+        let nuevoMisil = {
+            X = state.AlienX+2
+            Y = state.AlienY
+        }
+        {state with Misiles = nuevoMisil :: state.Misiles}
+        
     | _ ->
         state
     |> fun newState ->
@@ -91,16 +117,23 @@ let procesarTeclado state =
 let redibujarAlien state =
     mostrarMensaje state.AlienX state.AlienY ConsoleColor.Yellow "👽"
 
-let redibujarMisil state =
-    if state.MisilVisible then 
-        mostrarMensaje state.MisilX state.MisilY ConsoleColor.Yellow "=>"
+let redibujarMisiles state =
+    
+    state.Misiles
+    |> List.iter (fun misil ->
+        mostrarMensaje misil.X misil.Y ConsoleColor.Yellow "=>"
+    )
+
+let redibujarEnemigo state =
+    mostrarMensaje state.EnemigoX state.EnemigoY ConsoleColor.Yellow "☠️"
 
 let redibujarPantalla state =
     if state.RedibujarPantalla then 
         Console.Clear()
         [|
+            redibujarMisiles
             redibujarAlien
-            redibujarMisil
+            redibujarEnemigo
         |] |> Array.iter ( fun f -> state |> f)
         {state with RedibujarPantalla=false}
     else
@@ -111,7 +144,8 @@ let rec mainLoop state =
     let newState =
         state 
         |> actualizarTick
-        |> actualizarMisil
+        |> actualizarMisiles
+        |> actualizarEnemigo
         |> procesarTeclado
         |> redibujarPantalla
     if newState.ProgramState <> Terminated then 
