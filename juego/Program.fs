@@ -21,6 +21,7 @@ type State = {
     EnemigoX: int
     EnemigoY: int
     EnemigoDir: int
+    MisilesEnemigos: Misil list
 }
 
 let estadoInicial = {
@@ -33,6 +34,7 @@ let estadoInicial = {
     EnemigoX= Console.BufferWidth-2
     EnemigoY= 0
     EnemigoDir=1
+    MisilesEnemigos = []
 }
 
 let actualizarTick state =
@@ -50,6 +52,17 @@ let actualizarMisiles state =
     else
         state
 
+let actualizarMisilesEnemigos state =
+    if state.MisilesEnemigos <> [] then 
+        state.MisilesEnemigos
+        |> Seq.map (fun misil -> {misil with X = misil.X-1})
+        |> Seq.filter (fun misil -> misil.X >= 0)
+        |> Seq.toList
+        |> fun nuevosMisiles ->
+            {state with MisilesEnemigos = nuevosMisiles; RedibujarPantalla=true}
+    else
+        state
+
 let actualizarEnemigo state =
     if state.Tick % 4 = 0 then 
         let nuevoY = state.EnemigoY + state.EnemigoDir
@@ -61,6 +74,17 @@ let actualizarEnemigo state =
 
 
         {state with EnemigoY = Y; EnemigoDir=nuevaDir;RedibujarPantalla=true}
+    else
+        state
+
+
+let dispararMisilesEnemigos state =
+    if state.Tick % 10 = 0 then 
+        let nuevoMisil = {
+            X = state.EnemigoX-2
+            Y = state.EnemigoY
+        }
+        {state with MisilesEnemigos = nuevoMisil :: state.MisilesEnemigos; RedibujarPantalla=true}
     else
         state
 
@@ -117,6 +141,13 @@ let redibujarMisiles state =
         mostrarMensaje misil.X misil.Y ConsoleColor.Yellow "=>"
     )
 
+let redibujarMisilesEnemigos state =
+    
+    state.MisilesEnemigos
+    |> List.iter (fun misil ->
+        mostrarMensaje misil.X misil.Y ConsoleColor.Red "<="
+    )
+
 let redibujarEnemigo state =
     mostrarMensaje state.EnemigoX state.EnemigoY ConsoleColor.Yellow "☠️"
 
@@ -127,6 +158,7 @@ let redibujarPantalla state =
             redibujarMisiles
             redibujarAlien
             redibujarEnemigo
+            redibujarMisilesEnemigos
         |] |> Array.iter ( fun f -> state |> f)
         {state with RedibujarPantalla=false}
     else
@@ -139,6 +171,8 @@ let rec mainLoop state =
         |> actualizarTick
         |> actualizarMisiles
         |> actualizarEnemigo
+        |> dispararMisilesEnemigos
+        |> actualizarMisilesEnemigos
         |> procesarTeclado
         |> redibujarPantalla
     if newState.ProgramState <> Terminated then 
