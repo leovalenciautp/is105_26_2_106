@@ -1,27 +1,56 @@
-﻿open System
+﻿//
+// Programa con ejemplo de animaciones para ser usado como base
+// del trabajo final de la materia de Programacion I.
+//
+// El codigo es libre y puede ser modificado.
+// Autor: Leonardo Valencia Olarte
+// leonardo.valencia@utp.edu.co
+//
+open System
 open System.Threading
 
 open App.Utils
 
+//
+// La aplicacion tiene dos estados,
+// Esta ejecutandose: Running, o esta terminando: Terminated.
+//
 type ProgramState =
 | Running
 | Terminated
 
+//
+// Los misiles por ahora, solo necesitan las coordenadas
+// en pantalla
+//
 type Misil = {
     X: int
     Y: int
 }
 
+//
+// Tanto el Alien como el Enemigo, pueden estar
+// vivos o muertos.
+//
 type EstadoDeSprite =
 | Vivo
 | Muerto
 
+//
+// Este record contiene todo el estado del juego
+//
 type State = {
     ProgramState: ProgramState
     AlienX: int
     AlienY: int
     AlienEstado: EstadoDeSprite
-    ColisionAlien: int
+
+    //
+    // Aqui almacenamos el Tick cuando ocurre una colision con
+    // el Alien.
+    //
+    ColisionAlien: int 
+
     RedibujarPantalla: bool
     Tick: int
     Misiles: Misil list
@@ -50,10 +79,19 @@ let estadoInicial = {
     MisilesEnemigos = []
 }
 
+//
+// Esta funcion cumple la mision de simular un Timer del app
+// El Tick se incrementa cada 25 mili segundos.
+///
 let actualizarTick state =
     {state with Tick = state.Tick+1}
 
 
+//
+// Todos los misiles que hayamos disparado se mueven 1 a la derecha
+// filtramos y solo dejamos los misiles que aun estan visibles en la
+// pantalla
+//
 let actualizarMisiles state =
     if state.Misiles <> [] then 
         state.Misiles
@@ -65,6 +103,10 @@ let actualizarMisiles state =
     else
         state
 
+//
+// Usamos la misma heuristica para los misiles del enemigo
+// la diference es que se mueven 1 a la izquierda.
+//
 let actualizarMisilesEnemigos state =
     if state.MisilesEnemigos <> [] then 
         state.MisilesEnemigos
@@ -76,6 +118,14 @@ let actualizarMisilesEnemigos state =
     else
         state
 
+//
+// El enemigo se mueve de arriba a abajo. Hay varias formas de lograr el efecto. 
+// En esta funcion usamos una direccion que puede ser 1 o -1 (suma o resta)
+// y la cambiamos cuando el enemigo llege a la parte inferior, o a la superior de
+// la pantalla.
+//
+// Movemos el enemigo cada 4 ticks (100ms)
+//
 let actualizarEnemigo state =
     if state.EnemigoEstado = Vivo && state.Tick % 4 = 0 then 
         let nuevoY = state.EnemigoY + state.EnemigoDir
@@ -91,6 +141,10 @@ let actualizarEnemigo state =
         state
 
 
+//
+// El enemigo mos dispara msiiles cada 10 Ticks (250ms).
+// El nuevo misil disparado lo agregamos a la lista de misiles
+//
 let dispararMisilesEnemigos state =
     if state.EnemigoEstado = Vivo && state.Tick % 10 = 0 then 
         let nuevoMisil = {
@@ -101,7 +155,11 @@ let dispararMisilesEnemigos state =
     else
         state
 
-
+//
+// Aqui miramos si algun misil del enemigo ocupa la misma coordinada del Alien.
+// En este caso sumamos 1 a AlienX. para que la explosion ocurra cuando el misil 
+// haya tocado la mitad del emoji (recuerde que ocupan dos espacios).
+//
 let detectarColisionAlien state =
     state.MisilesEnemigos
     |> List.filter ( fun misil -> not ( misil.Y = state.AlienY && misil.X = state.AlienX+1))
@@ -116,6 +174,10 @@ let detectarColisionAlien state =
         else
             state 
 
+//
+// Heuristica muy similar para el enemigo, miramos si alguno
+// de nuestros misiles lo logro golpear.
+//
 let detectarColisionEnemigo state =
     state.Misiles
     |> List.filter ( fun misil -> not ( misil.Y = state.EnemigoY && misil.X = state.EnemigoX-1))
@@ -130,6 +192,10 @@ let detectarColisionEnemigo state =
         else
             state 
 
+//
+// Hay que revivir al Alien despues de un tiempo, en este caso
+// 120 ticks (que euivalen a 3 segundos)
+//
 let resetAlien state =
     if state.AlienEstado = Muerto then 
         let tiempo = state.Tick-state.ColisionAlien
@@ -140,6 +206,9 @@ let resetAlien state =
     else
         state
 
+//
+// Reusamos la misma heuristica para revivir al enemigo
+//
 let resetEnemigo state =
     if state.EnemigoEstado = Muerto then 
         let tiempo = state.Tick-state.ColisionEnemigo
@@ -150,11 +219,21 @@ let resetEnemigo state =
     else
         state
 
+//
+// Funciones que procesan teclas. 
+// Esta funcion mira si se presionó la tecla Escape
+// y termina el programa.
+//
 let procesearTecladoApp key state =
     match key with 
     | ConsoleKey.Escape ->
         {state with ProgramState = Terminated}
     | _ -> state
+
+//
+// El Alien responde a las flechas del teclado y a la barra
+// espaciadora.
+//
 let procesarTecladoDeAlien key state =
     if state.AlienEstado = Vivo then 
         match key with  
@@ -178,6 +257,10 @@ let procesarTecladoDeAlien key state =
         | _ ->
             state
         |> fun newState ->
+            // Esta construccion la usamos 
+            // para marcar que la pantalla se debe
+            // redibujar si cambio algo del estado
+            //
             if newState <> state then 
                 {newState with RedibujarPantalla=true}
             else
@@ -185,6 +268,11 @@ let procesarTecladoDeAlien key state =
     else
         state
 
+//
+// Esta es la funcion global que mira si hay teclas 
+// disponibles para leer, y las lee y se las pasa
+// a los otros procesadores.
+//
 let procesarTeclado state =
     if Console.KeyAvailable then 
         let k = Console.ReadKey true
