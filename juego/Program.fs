@@ -28,6 +28,8 @@ type State = {
     EnemigoX: int
     EnemigoY: int
     EnemigoDir: int
+    EnemigoEstado: EstadoDeSprite
+    ColisionEnemigo: int
     MisilesEnemigos: Misil list
 }
 
@@ -43,6 +45,8 @@ let estadoInicial = {
     EnemigoX= Console.BufferWidth-2
     EnemigoY= 0
     EnemigoDir=1
+    EnemigoEstado = Vivo
+    ColisionEnemigo = 0
     MisilesEnemigos = []
 }
 
@@ -73,7 +77,7 @@ let actualizarMisilesEnemigos state =
         state
 
 let actualizarEnemigo state =
-    if state.Tick % 4 = 0 then 
+    if state.EnemigoEstado = Vivo && state.Tick % 4 = 0 then 
         let nuevoY = state.EnemigoY + state.EnemigoDir
         let nuevaDir,Y = 
             match nuevoY with 
@@ -88,7 +92,7 @@ let actualizarEnemigo state =
 
 
 let dispararMisilesEnemigos state =
-    if state.Tick % 10 = 0 then 
+    if state.EnemigoEstado = Vivo && state.Tick % 10 = 0 then 
         let nuevoMisil = {
             X = state.EnemigoX-2
             Y = state.EnemigoY
@@ -112,11 +116,35 @@ let detectarColisionAlien state =
         else
             state 
 
+let detectarColisionEnemigo state =
+    state.Misiles
+    |> List.filter ( fun misil -> not ( misil.Y = state.EnemigoY && misil.X = state.EnemigoX-1))
+    |> fun nuevosMisiles ->
+        if nuevosMisiles.Length <> state.Misiles.Length then
+            {state with 
+                EnemigoEstado = Muerto
+                Misiles = nuevosMisiles
+                RedibujarPantalla=true
+                ColisionEnemigo = state.Tick
+            }
+        else
+            state 
+
 let resetAlien state =
     if state.AlienEstado = Muerto then 
         let tiempo = state.Tick-state.ColisionAlien
         if tiempo >= 120 then 
             {state with AlienEstado=Vivo;RedibujarPantalla=true}
+        else
+            state
+    else
+        state
+
+let resetEnemigo state =
+    if state.EnemigoEstado = Muerto then 
+        let tiempo = state.Tick-state.ColisionEnemigo
+        if tiempo >= 120 then 
+            {state with EnemigoEstado=Vivo;RedibujarPantalla=true}
         else
             state
     else
@@ -189,7 +217,12 @@ let redibujarMisilesEnemigos state =
     )
 
 let redibujarEnemigo state =
-    mostrarMensaje state.EnemigoX state.EnemigoY ConsoleColor.Yellow "☠️"
+    let sprite = 
+        if state.EnemigoEstado = Vivo then 
+            "☠️"
+        else
+            "💥"
+    mostrarMensaje state.EnemigoX state.EnemigoY ConsoleColor.Yellow sprite
 
 let redibujarPantalla state =
     if state.RedibujarPantalla then 
@@ -214,7 +247,9 @@ let rec mainLoop state =
         |> dispararMisilesEnemigos
         |> actualizarMisilesEnemigos
         |> detectarColisionAlien
+        |> detectarColisionEnemigo
         |> resetAlien
+        |> resetEnemigo
         |> procesarTeclado
         |> redibujarPantalla
     if newState.ProgramState <> Terminated then 
