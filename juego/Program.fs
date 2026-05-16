@@ -213,7 +213,7 @@ let redibujarMisilesEnemigos state =
     
     state.MisilesEnemigos
     |> List.iter (fun misil ->
-        mostrarMensaje misil.X misil.Y ConsoleColor.Red "<="
+        mostrarMensaje misil.X misil.Y ConsoleColor.Cyan "<="
     )
 
 let redibujarEnemigo state =
