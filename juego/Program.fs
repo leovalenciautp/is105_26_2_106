@@ -11,10 +11,17 @@ type Misil = {
     X: int
     Y: int
 }
+
+type EstadoDeSprite =
+| Vivo
+| Muerto
+
 type State = {
     ProgramState: ProgramState
     AlienX: int
     AlienY: int
+    AlienEstado: EstadoDeSprite
+    ColisionAlien: int
     RedibujarPantalla: bool
     Tick: int
     Misiles: Misil list
@@ -28,6 +35,8 @@ let estadoInicial = {
     ProgramState = Running
     AlienX = Console.BufferWidth/2
     AlienY = Console.BufferHeight/2
+    AlienEstado = Vivo
+    ColisionAlien = 0
     RedibujarPantalla = true
     Tick = -1
     Misiles = []
@@ -89,6 +98,29 @@ let dispararMisilesEnemigos state =
         state
 
 
+let detectarColisionAlien state =
+    state.MisilesEnemigos
+    |> List.filter ( fun misil -> not ( misil.Y = state.AlienY && misil.X = state.AlienX+1))
+    |> fun nuevosMisiles ->
+        if nuevosMisiles.Length <> state.MisilesEnemigos.Length then
+            {state with 
+                AlienEstado = Muerto
+                MisilesEnemigos = nuevosMisiles
+                RedibujarPantalla=true
+                ColisionAlien = state.Tick
+            }
+        else
+            state 
+
+let resetAlien state =
+    if state.AlienEstado = Muerto then 
+        let tiempo = state.Tick-state.ColisionAlien
+        if tiempo >= 120 then 
+            {state with AlienEstado=Vivo;RedibujarPantalla=true}
+        else
+            state
+    else
+        state
 
 let procesearTecladoApp key state =
     match key with 
@@ -96,31 +128,34 @@ let procesearTecladoApp key state =
         {state with ProgramState = Terminated}
     | _ -> state
 let procesarTecladoDeAlien key state =
-    match key with 
-    | ConsoleKey.UpArrow ->
-        {state with AlienY = max 0 (state.AlienY-1)}
-    | ConsoleKey.DownArrow ->
-        {state with AlienY = min (Console.BufferHeight-1) (state.AlienY+1)}
+    if state.AlienEstado = Vivo then 
+        match key with  
+        | ConsoleKey.UpArrow ->
+            {state with AlienY = max 0 (state.AlienY-1)}
+        | ConsoleKey.DownArrow ->
+            {state with AlienY = min (Console.BufferHeight-1) (state.AlienY+1)}
 
-    | ConsoleKey.LeftArrow ->
-        {state with AlienX = max 0 (state.AlienX-1)}
-    | ConsoleKey.RightArrow ->
-        {state with AlienX = min (Console.BufferWidth-2) (state.AlienX+1)}
+        | ConsoleKey.LeftArrow ->
+            {state with AlienX = max 0 (state.AlienX-1)}
+        | ConsoleKey.RightArrow ->
+            {state with AlienX = min (Console.BufferWidth-2) (state.AlienX+1)}
 
-    | ConsoleKey.Spacebar ->
-        let nuevoMisil = {
-            X = state.AlienX+2
-            Y = state.AlienY
-        }
-        {state with Misiles = nuevoMisil :: state.Misiles}
-        
-    | _ ->
-        state
-    |> fun newState ->
-        if newState <> state then 
-            {newState with RedibujarPantalla=true}
-        else
+        | ConsoleKey.Spacebar ->
+            let nuevoMisil = {
+                X = state.AlienX+2
+                Y = state.AlienY
+            }
+            {state with Misiles = nuevoMisil :: state.Misiles}
+            
+        | _ ->
             state
+        |> fun newState ->
+            if newState <> state then 
+                {newState with RedibujarPantalla=true}
+            else
+                state
+    else
+        state
 
 let procesarTeclado state =
     if Console.KeyAvailable then 
@@ -132,7 +167,12 @@ let procesarTeclado state =
         state
 
 let redibujarAlien state =
-    mostrarMensaje state.AlienX state.AlienY ConsoleColor.Yellow "👽"
+    let sprite = 
+        if state.AlienEstado = Vivo then 
+            "👽"
+        else
+            "💥"
+    mostrarMensaje state.AlienX state.AlienY ConsoleColor.Yellow sprite
 
 let redibujarMisiles state =
     
@@ -173,6 +213,8 @@ let rec mainLoop state =
         |> actualizarEnemigo
         |> dispararMisilesEnemigos
         |> actualizarMisilesEnemigos
+        |> detectarColisionAlien
+        |> resetAlien
         |> procesarTeclado
         |> redibujarPantalla
     if newState.ProgramState <> Terminated then 
