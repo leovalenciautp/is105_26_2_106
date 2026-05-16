@@ -282,6 +282,10 @@ let procesarTeclado state =
     else
         state
 
+//
+// El alien se dibuja diferent dependiendo de si esta
+// Vivo o Muerto
+//
 let redibujarAlien state =
     let sprite = 
         if state.AlienEstado = Vivo then 
@@ -304,6 +308,10 @@ let redibujarMisilesEnemigos state =
         mostrarMensaje misil.X misil.Y ConsoleColor.Cyan "<="
     )
 
+//
+// El enemigo tambien se dibuja diferent dependiendo de si
+// esta vivo o muerto
+//
 let redibujarEnemigo state =
     let sprite = 
         if state.EnemigoEstado = Vivo then 
@@ -312,6 +320,11 @@ let redibujarEnemigo state =
             "💥"
     mostrarMensaje state.EnemigoX state.EnemigoY ConsoleColor.Yellow sprite
 
+//
+// La funcion global que redibuja la pantalla.
+// Usamos un Array de todas las funciones que dibujan
+// y las llamamos en Array.iter pasando el estado del programa.
+//
 let redibujarPantalla state =
     if state.RedibujarPantalla then 
         Console.Clear()
@@ -326,6 +339,10 @@ let redibujarPantalla state =
         state
 
 
+//
+// Loop principal, notar que solo es una pipeline gigante
+// donde el estado se va modificando paso a paso
+//
 let rec mainLoop state =
     let newState =
         state 
